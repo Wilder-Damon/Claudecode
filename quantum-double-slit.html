@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quantum Double-Slit Experiment</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a14;
+      color: #c8d8f0;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      letter-spacing: 0.15em;
+      color: #7eb8f7;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      font-size: 0.75rem;
+      color: #5a7a9a;
+      margin-bottom: 20px;
+      letter-spacing: 0.1em;
+    }
+
+    .layout {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    canvas {
+      border: 1px solid #1e3050;
+      border-radius: 6px;
+      background: #060610;
+      flex-shrink: 0;
+    }
+
+    .panel {
+      width: 240px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      background: #0d1625;
+      border: 1px solid #1e3050;
+      border-radius: 6px;
+      padding: 14px;
+    }
+
+    .card h3 {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #4a8abf;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #1a2a3a;
+      padding-bottom: 6px;
+    }
+
+    .control-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    .control-row:last-child { margin-bottom: 0; }
+
+    label {
+      font-size: 0.68rem;
+      color: #8aabcc;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    label span { color: #7eb8f7; }
+
+    input[type=range] {
+      width: 100%;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #1a2a3a;
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #4a8abf;
+      cursor: pointer;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      flex: 1;
+      padding: 7px 4px;
+      background: #0d1e30;
+      border: 1px solid #2a4060;
+      border-radius: 4px;
+      color: #7eb8f7;
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    button:hover { background: #142640; border-color: #4a8abf; }
+
+    button.active {
+      background: #1a3a5a;
+      border-color: #4a9adf;
+      color: #a8d0f8;
+    }
+
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      padding: 3px 0;
+      border-bottom: 1px solid #0f1e2e;
+    }
+
+    .stat:last-child { border-bottom: none; }
+    .stat .val { color: #7eb8f7; }
+
+    .legend {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.65rem;
+      color: #7a9aba;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .mode-label {
+      font-size: 0.65rem;
+      color: #5a8aaa;
+      text-align: center;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Quantum Double-Slit Experiment</h1>
+<p class="subtitle">Wave–particle duality simulation</p>
+
+<div class="layout">
+  <canvas id="sim" width="800" height="540"></canvas>
+
+  <div class="panel">
+
+    <div class="card">
+      <h3>Controls</h3>
+      <div class="btn-row">
+        <button id="btnPlay" class="active">Pause</button>
+        <button id="btnReset">Reset</button>
+      </div>
+      <br>
+      <div class="btn-row">
+        <button id="btnWave" class="active">Wave</button>
+        <button id="btnParticle">Particle</button>
+      </div>
+      <p class="mode-label" id="modeDesc">Showing probability wave + particle hits</p>
+    </div>
+
+    <div class="card">
+      <h3>Parameters</h3>
+
+      <div class="control-row">
+        <label>Wavelength <span id="lblWave">420 nm</span></label>
+        <input type="range" id="slWavelength" min="300" max="700" value="420">
+      </div>
+
+      <div class="control-row">
+        <label>Slit separation <span id="lblSep">80 px</span></label>
+        <input type="range" id="slSep" min="30" max="160" value="80">
+      </div>
+
+      <div class="control-row">
+        <label>Slit width <span id="lblWidth">18 px</span></label>
+        <input type="range" id="slSlitW" min="6" max="50" value="18">
+      </div>
+
+      <div class="control-row">
+        <label>Particles / s <span id="lblRate">30</span></label>
+        <input type="range" id="slRate" min="1" max="100" value="30">
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Statistics</h3>
+      <div class="stat"><span>Particles fired</span><span class="val" id="statTotal">0</span></div>
+      <div class="stat"><span>On screen</span><span class="val" id="statScreen">0</span></div>
+      <div class="stat"><span>Frame</span><span class="val" id="statFrame">0</span></div>
+    </div>
+
+    <div class="card">
+      <h3>Legend</h3>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#3a7aef"></div>
+          <span>Probability wave amplitude</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#f0f040"></div>
+          <span>Particle in flight</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#50e8a0"></div>
+          <span>Detection hit (fresh)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#1a5030"></div>
+          <span>Accumulated pattern</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── Canvas setup ────────────────────────────────────────────────────────────
+const canvas = document.getElementById('sim');
+const ctx    = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// ─── Layout constants ────────────────────────────────────────────────────────
+const SOURCE_X  = 60;
+const BARRIER_X = 320;
+const SCREEN_X  = 740;
+const MID_Y     = H / 2;
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let running   = true;
+let showWave  = true;
+let frame     = 0;
+let lastTime  = 0;
+let accum     = 0;       // fractional carry for particle spawning
+let totalFired   = 0;
+let screenHits   = [];   // {y, age}  (age in frames)
+let particles    = [];   // in-flight particles
+const HIT_MAX_AGE = 180;
+
+// ─── Parameters (updated by sliders) ─────────────────────────────────────────
+let lambda    = 420;   // "wavelength" in arbitrary units — controls fringe spacing
+let slitSep   = 80;    // centre-to-centre slit separation (px on screen)
+let slitWidth = 18;    // slit width (px)
+let rate      = 30;    // particles per second
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+// Wavelength → RGB colour (visible spectrum approximation)
+function waveColor(nm) {
+  let r, g, b;
+  if      (nm < 380) { r=0.6; g=0;   b=0.8; }
+  else if (nm < 440) { r=-(nm-440)/60; g=0; b=1; }
+  else if (nm < 490) { r=0; g=(nm-440)/50; b=1; }
+  else if (nm < 510) { r=0; g=1; b=-(nm-510)/20; }
+  else if (nm < 580) { r=(nm-510)/70; g=1; b=0; }
+  else if (nm < 645) { r=1; g=-(nm-645)/65; b=0; }
+  else               { r=1; g=0; b=0; }
+  r = Math.max(0, Math.min(1, r));
+  g = Math.max(0, Math.min(1, g));
+  b = Math.max(0, Math.min(1, b));
+  return [Math.round(r*255), Math.round(g*255), Math.round(b*255)];
+}
+
+// Intensity pattern: single-slit envelope × double-slit fringes
+// y = screen position relative to centre, dist = barrier→screen distance
+function intensity(y) {
+  const dist = SCREEN_X - BARRIER_X;
+  // Scale lambda so the pattern spans nicely regardless of nm value
+  // Use lambda / 200 as the effective fractional wavelength in px
+  const lEff = lambda / 200;  // effective wavelength in px-units
+
+  const sinTheta = y / Math.sqrt(y*y + dist*dist);
+
+  // Double-slit: β = π d sinθ / λ
+  const beta  = Math.PI * slitSep * sinTheta / lEff;
+  // Single-slit envelope: α = π a sinθ / λ
+  const alpha = Math.PI * slitWidth * sinTheta / lEff;
+
+  const doubleSlit = Math.cos(beta);
+  const sinc = (alpha === 0) ? 1 : Math.sin(alpha) / alpha;
+
+  return (doubleSlit * sinc) ** 2;
+}
+
+// Sample a screen y-position according to the intensity distribution (rejection sampling)
+function sampleScreenY() {
+  const yRange = H * 0.46;
+  for (let attempt = 0; attempt < 2000; attempt++) {
+    const y = (Math.random() - 0.5) * 2 * yRange;
+    const p = intensity(y);
+    if (Math.random() < p) return MID_Y + y;
+  }
+  // fallback: central maximum
+  return MID_Y + (Math.random() - 0.5) * slitWidth;
+}
+
+// Determine which slit a particle "came from" (for particle trajectory visualisation)
+function slitY(targetY) {
+  const y1 = MID_Y - slitSep / 2;
+  const y2 = MID_Y + slitSep / 2;
+  // Quantum mechanically we don't know, but for visual we pick randomly
+  return Math.random() < 0.5 ? y1 : y2;
+}
+
+// ─── Particle spawning ───────────────────────────────────────────────────────
+function spawnParticle() {
+  const screenY  = sampleScreenY();
+  const viaY     = slitY(screenY);     // which slit
+  const speed    = 3 + Math.random();  // px/frame
+
+  // Two-segment path: source → slit, slit → screen
+  particles.push({
+    seg: 0,        // 0 = before barrier, 1 = after barrier
+    x: SOURCE_X,
+    y: MID_Y,
+    targetY: viaY,       // first target (slit)
+    screenY: screenY,    // final destination
+    speed,
+    viaY,
+    done: false,
+  });
+  totalFired++;
+}
+
+// ─── Update ───────────────────────────────────────────────────────────────────
+function update(dt) {
+  // Spawn particles
+  accum += rate * dt;
+  while (accum >= 1) {
+    spawnParticle();
+    accum -= 1;
+  }
+
+  // Move particles
+  for (const p of particles) {
+    if (p.done) continue;
+
+    if (p.seg === 0) {
+      // Heading to the barrier/slit
+      const dx = BARRIER_X - p.x;
+      const dy = p.targetY - p.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < p.speed) {
+        p.x = BARRIER_X;
+        p.y = p.targetY;
+        p.seg = 1;
+      } else {
+        p.x += dx / dist * p.speed;
+        p.y += dy / dist * p.speed;
+      }
+    } else {
+      // Heading to screen
+      const dx = SCREEN_X - p.x;
+      const dy = p.screenY - p.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < p.speed) {
+        p.x = SCREEN_X;
+        p.y = p.screenY;
+        p.done = true;
+        screenHits.push({ y: p.y, age: 0 });
+      } else {
+        p.x += dx / dist * p.speed;
+        p.y += dy / dist * p.speed;
+      }
+    }
+  }
+
+  // Age hits, remove old ones
+  for (const h of screenHits) h.age++;
+  screenHits = screenHits.filter(h => h.age < HIT_MAX_AGE);
+
+  // Remove done particles that are old
+  particles = particles.filter(p => !p.done);
+
+  frame++;
+}
+
+// ─── Draw ─────────────────────────────────────────────────────────────────────
+const [wr, wg, wb] = waveColor(lambda);
+
+function drawBackground() {
+  ctx.fillStyle = '#060610';
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawSource() {
+  // Pulsing emitter
+  const pulse = 0.5 + 0.5 * Math.sin(frame * 0.12);
+  const grad = ctx.createRadialGradient(SOURCE_X, MID_Y, 0, SOURCE_X, MID_Y, 24 + 8*pulse);
+  grad.addColorStop(0, `rgba(${wr},${wg},${wb},0.9)`);
+  grad.addColorStop(0.4, `rgba(${wr},${wg},${wb},0.3)`);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(SOURCE_X, MID_Y, 24 + 8*pulse, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle = `rgba(${wr},${wg},${wb},0.9)`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(SOURCE_X, MID_Y, 6, 0, Math.PI*2);
+  ctx.stroke();
+
+  ctx.fillStyle = `rgba(${wr},${wg},${wb},0.9)`;
+  ctx.font = '10px Courier New';
+  ctx.textAlign = 'center';
+  ctx.fillText('SOURCE', SOURCE_X, MID_Y + 30);
+}
+
+function drawWave() {
+  if (!showWave) return;
+
+  // Huygens-style concentric ripples from each slit
+  const slits = [MID_Y - slitSep/2, MID_Y + slitSep/2];
+  const phase = frame * 0.08;
+
+  for (const sy of slits) {
+    for (let r = 10; r < SCREEN_X - BARRIER_X + 20; r += lambda / 60) {
+      const rPhase = r * 0.08 - phase;
+      const alpha = Math.max(0, 0.18 - r / (SCREEN_X - BARRIER_X) * 0.16);
+      ctx.strokeStyle = `rgba(${wr},${wg},${wb},${alpha})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(BARRIER_X, sy, r, -Math.PI/2, Math.PI/2);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawIntensityOverlay() {
+  if (!showWave) return;
+
+  // Draw the theoretical intensity pattern as a glow on the screen
+  const imgData = ctx.createImageData(4, H);
+  for (let py = 0; py < H; py++) {
+    const y = py - MID_Y;
+    const I = intensity(y);
+    const a = Math.sqrt(I);  // sqrt for better visual spread
+    const idx = py * 4 * 4;
+    for (let col = 0; col < 4; col++) {
+      imgData.data[idx + col*4 + 0] = wr * a;
+      imgData.data[idx + col*4 + 1] = wg * a;
+      imgData.data[idx + col*4 + 2] = wb * a;
+      imgData.data[idx + col*4 + 3] = a * 180;
+    }
+  }
+  ctx.putImageData(imgData, SCREEN_X - 2, 0);
+}
+
+function drawBarrier() {
+  ctx.fillStyle = '#1a2a3a';
+  ctx.fillRect(BARRIER_X - 6, 0, 12, H);
+
+  // Draw slits (openings in barrier)
+  const y1 = MID_Y - slitSep/2 - slitWidth/2;
+  const y2 = MID_Y + slitSep/2 - slitWidth/2;
+
+  // Erase slit openings
+  ctx.fillStyle = '#060610';
+  ctx.fillRect(BARRIER_X - 6, y1, 12, slitWidth);
+  ctx.fillRect(BARRIER_X - 6, y2, 12, slitWidth);
+
+  // Slit outlines
+  ctx.strokeStyle = '#4a8abf';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(BARRIER_X - 6, y1, 12, slitWidth);
+  ctx.strokeRect(BARRIER_X - 6, y2, 12, slitWidth);
+
+  ctx.fillStyle = '#4a8abf';
+  ctx.font = '10px Courier New';
+  ctx.textAlign = 'center';
+  ctx.fillText('BARRIER', BARRIER_X, H - 10);
+}
+
+function drawScreen() {
+  ctx.fillStyle = '#0e1e2e';
+  ctx.fillRect(SCREEN_X, 0, 8, H);
+  ctx.strokeStyle = '#2a5070';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(SCREEN_X, 0, 8, H);
+
+  ctx.fillStyle = '#4a8abf';
+  ctx.font = '10px Courier New';
+  ctx.textAlign = 'center';
+  ctx.fillText('SCREEN', SCREEN_X + 4, H - 10);
+}
+
+function drawAccumulatedPattern() {
+  // Draw all screen hits with colour fade by age
+  for (const h of screenHits) {
+    const life = 1 - h.age / HIT_MAX_AGE;
+    const r2 = Math.floor(wr * life + 20 * (1-life));
+    const g2 = Math.floor(wg * life + 80 * (1-life));
+    const b2 = Math.floor(wb * life + 48 * (1-life));
+    const alpha = 0.3 + 0.7 * life;
+
+    ctx.fillStyle = `rgba(${r2},${g2},${b2},${alpha})`;
+    ctx.beginPath();
+    ctx.arc(SCREEN_X + 4, h.y, 2, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    if (p.done) continue;
+    const pulse = 0.6 + 0.4 * Math.sin(frame * 0.3 + p.x * 0.1);
+    ctx.fillStyle = `rgba(240, 240, 60, ${pulse})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+    ctx.fill();
+
+    // Faint trail
+    ctx.strokeStyle = `rgba(240, 200, 40, 0.2)`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (p.seg === 0) {
+      ctx.moveTo(SOURCE_X, MID_Y);
+    } else {
+      ctx.moveTo(BARRIER_X, p.viaY);
+    }
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  }
+}
+
+function drawLabels() {
+  ctx.fillStyle = '#3a6080';
+  ctx.font = '11px Courier New';
+  ctx.textAlign = 'center';
+
+  // Slit labels
+  const y1 = MID_Y - slitSep/2;
+  const y2 = MID_Y + slitSep/2;
+  ctx.fillText('Slit 1', BARRIER_X - 40, y1 - 10);
+  ctx.fillText('Slit 2', BARRIER_X - 40, y2 + 18);
+
+  // Separation annotation
+  ctx.strokeStyle = '#2a4060';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3,3]);
+  ctx.beginPath();
+  ctx.moveTo(BARRIER_X + 20, y1);
+  ctx.lineTo(BARRIER_X + 20, y2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillText(`d=${slitSep}px`, BARRIER_X + 50, MID_Y + 4);
+
+  // Distance arrow
+  ctx.strokeStyle = '#1a3050';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4,4]);
+  ctx.beginPath();
+  ctx.moveTo(BARRIER_X, H - 30);
+  ctx.lineTo(SCREEN_X, H - 30);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillText(`L = ${SCREEN_X-BARRIER_X} px`, (BARRIER_X+SCREEN_X)/2, H - 18);
+
+  // Lambda label
+  const [r2,g2,b2] = waveColor(lambda);
+  ctx.fillStyle = `rgb(${r2},${g2},${b2})`;
+  ctx.fillText(`λ = ${lambda} nm`, SOURCE_X, MID_Y - 35);
+}
+
+function draw() {
+  drawBackground();
+  drawWave();
+  drawBarrier();
+  drawScreen();
+  drawIntensityOverlay();
+  drawAccumulatedPattern();
+  drawParticles();
+  drawSource();
+  drawLabels();
+}
+
+// ─── Stats update ─────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('statTotal').textContent  = totalFired;
+  document.getElementById('statScreen').textContent = screenHits.length;
+  document.getElementById('statFrame').textContent  = frame;
+}
+
+// ─── Main loop ────────────────────────────────────────────────────────────────
+function loop(ts) {
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+
+  if (running) {
+    update(dt);
+    draw();
+    updateStats();
+  }
+
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(ts => { lastTime = ts; requestAnimationFrame(loop); });
+
+// ─── Slider wiring ────────────────────────────────────────────────────────────
+function refreshWaveColor() {
+  const [r,g,b] = waveColor(lambda);
+  // nothing extra needed — draw() reads waveColor on each frame
+}
+
+document.getElementById('slWavelength').addEventListener('input', e => {
+  lambda = +e.target.value;
+  document.getElementById('lblWave').textContent = lambda + ' nm';
+});
+
+document.getElementById('slSep').addEventListener('input', e => {
+  slitSep = +e.target.value;
+  document.getElementById('lblSep').textContent = slitSep + ' px';
+});
+
+document.getElementById('slSlitW').addEventListener('input', e => {
+  slitWidth = +e.target.value;
+  document.getElementById('lblWidth').textContent = slitWidth + ' px';
+});
+
+document.getElementById('slRate').addEventListener('input', e => {
+  rate = +e.target.value;
+  document.getElementById('lblRate').textContent = rate;
+});
+
+// ─── Button wiring ────────────────────────────────────────────────────────────
+const btnPlay     = document.getElementById('btnPlay');
+const btnReset    = document.getElementById('btnReset');
+const btnWaveMode = document.getElementById('btnWave');
+const btnPartMode = document.getElementById('btnParticle');
+const modeDesc    = document.getElementById('modeDesc');
+
+btnPlay.addEventListener('click', () => {
+  running = !running;
+  btnPlay.textContent = running ? 'Pause' : 'Play';
+  btnPlay.classList.toggle('active', running);
+});
+
+btnReset.addEventListener('click', () => {
+  screenHits = [];
+  particles  = [];
+  totalFired = 0;
+  frame      = 0;
+  accum      = 0;
+  draw();
+});
+
+btnWaveMode.addEventListener('click', () => {
+  showWave = true;
+  btnWaveMode.classList.add('active');
+  btnPartMode.classList.remove('active');
+  modeDesc.textContent = 'Showing probability wave + particle hits';
+});
+
+btnPartMode.addEventListener('click', () => {
+  showWave = false;
+  btnWaveMode.classList.remove('active');
+  btnPartMode.classList.add('active');
+  modeDesc.textContent = 'Particle-only mode — wave hidden';
+});
+</script>
+</body>
+</html>
